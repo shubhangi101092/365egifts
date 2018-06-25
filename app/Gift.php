@@ -23,9 +23,8 @@ class Gift extends Model
         $this->expiry_days = $data['expiry_days'];
         $this->card_limit = $data['card_limit'];
         $this->gift_type = $data['card_type'];
-        $gifts->redeem_limit = $data['redeem_limit'];
-        $gifts->gift_type = $data['gift_type'];
-        $gifts->currency = $data['currency'];
+        $this->redeem_limit = $data['redeem_limit'];
+        $this->currency = $data['currency'];
         $this->save();
         return $this->id;
     }

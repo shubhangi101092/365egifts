@@ -28,23 +28,11 @@ class GiftController extends Controller
     public function create(Request $request)
     {
         //AES encrypt on data
+        //paypal api integration
 
         $i = 0;
         $arrNew = array();
-        foreach ($request->cards as $card) {
-            $gifts = new Gift();
-            $card['gift_id'] = $gifts->savegift($card);
-            $gift_recipient = new GiftRecipient();
-            $gift_recipient->save_receipient($card);
-            $transctions['gift_ids'][] = $card['gift_id'];
-            $str[] = $card['gift_id'];
-        }
-        $str = implode(',', $str);
-        $transactions['gift_ids'] = $str;
-        $transactions[] = $request->transactions;
-        $transctions = new Transaction();
-        $transaction->save_transaction($transactions);
-
+        
         $rules = [
             'user_id' => 'required|max:30',
             'first_name' => 'required|max:30',
@@ -60,7 +48,7 @@ class GiftController extends Controller
         if ($request->hasFile('image')) {
             $rules['image'] = 'image|mimes:jpeg,bmp,png,jpg|max:2000';
         }
-        if ($request->has('productType') && $request->productType == 'single') {
+        if ($request->has('card_type') && $request->productType == 'single') {
             $rules = [
                 'rec_first_name' => 'required|max:30',
                 'rec_last_name' => 'required|max:30',
@@ -87,6 +75,22 @@ class GiftController extends Controller
             insert record into gifts table
              */
             if ($request->has('transaction_status') && $request->transaction_status == 'approved') {
+
+                foreach ($request->cards as $card) {
+            $gifts = new Gift();
+            $card['gift_id'] = $gifts->savegift($card);
+            $gift_recipient = new GiftRecipient();
+            $gift_recipient->save_receipient($card);
+           // $transctions['gift_ids'][] = $card['gift_id'];
+            $str[] = $card['gift_id'];
+        }
+        $gift_ids = implode(',', $str);
+       
+        foreach ($request->transactions as $transactiondata) {
+        $transction = new Transaction();
+         $transactiondata['gift_ids'] =  $gift_ids; 
+        $transction->save_transaction($transactiondata);
+        }
 
             } else {
                 return response()->json(['success' => false, 'msg' => 'Transation has been failed.']);
