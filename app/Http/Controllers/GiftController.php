@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Gift;
+use App\GiftRecipient;
+use App\Transaction;
 use Illuminate\Http\Request;
 use Validator;
 
@@ -25,6 +27,24 @@ class GiftController extends Controller
      */
     public function create(Request $request)
     {
+        //AES encrypt on data
+
+        $i = 0;
+        $arrNew = array();
+        foreach ($request->cards as $card) {
+            $gifts = new Gift();
+            $card['gift_id'] = $gifts->savegift($card);
+            $gift_recipient = new GiftRecipient();
+            $gift_recipient->save_receipient($card);
+            $transctions['gift_ids'][] = $card['gift_id'];
+            $str[] = $card['gift_id'];
+        }
+        $str = implode(',', $str);
+        $transactions['gift_ids'] = $str;
+        $transactions[] = $request->transactions;
+        $transctions = new Transaction();
+        $transaction->save_transaction($transactions);
+
         $rules = [
             'user_id' => 'required|max:30',
             'first_name' => 'required|max:30',
@@ -34,7 +54,7 @@ class GiftController extends Controller
             'template_id' => 'required|max:30',
             'message' => 'required|max:250',
             'amount' => 'required',
-            'productType' => 'required',
+            'gift_type' => 'required',
         ];
 
         if ($request->hasFile('image')) {
@@ -67,34 +87,6 @@ class GiftController extends Controller
             insert record into gifts table
              */
             if ($request->has('transaction_status') && $request->transaction_status == 'approved') {
-                $gifts = new Gift();
-                $gifts->template_id = $request->template_id;
-                $gifts->gift_type = $request->productType;
-                $gifts->user_id = $request->user_id;
-                $gifts->amount = $request->amount;
-                $gifts->first_name = $request->first_name;
-                $gifts->last_name = $request->last_name;
-                $gifts->phone = $request->phone;
-                $gifts->email = $request->email;
-                $gifts->message = $request->message;
-                $gifts->expiry_days = $request->expiry_days;
-                $gifts->card_limit = $request->card_limit;
-                if ($request->has('card_type') && $request->card_type = 'single') {
-                    $gifts->redeem_limit = 1;
-                } else {
-                    $gifts->redeem_limit = 5000;
-                }
-
-                if ($request->hasFile('image')) {
-                    //upload the image
-                    $file = $request->file('image');
-                    $fileName = $file->getClientOriginalName();
-                    $destinationPath = public_path() . '/upload/';
-                    $file->move($destinationPath, $fileName);
-                    $gifts->image = '/upload/' . $fileName;
-                }
-
-                $gifts->save();
 
             } else {
                 return response()->json(['success' => false, 'msg' => 'Transation has been failed.']);
