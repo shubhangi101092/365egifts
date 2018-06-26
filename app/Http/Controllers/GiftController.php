@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Gift;
 use App\GiftRecipient;
 use App\Transaction;
+use Config;
 use Illuminate\Http\Request;
 use Validator;
 
@@ -29,40 +30,37 @@ class GiftController extends Controller
     {
         //AES encrypt on data
         //paypal api integration
-
-        $i = 0;
-        $arrNew = array();
-        
+        //
         $rules = [
-            'user_id' => 'required|max:30',
-            'first_name' => 'required|max:30',
-            'last_name' => 'required|max:30',
-            'phone' => 'required|numeric|max:100',
-            'email' => 'required|email|max:255|unique:users',
-            'template_id' => 'required|max:30',
-            'message' => 'required|max:250',
-            'amount' => 'required',
-            'gift_type' => 'required',
+            'cards.*.user_id' => 'required|max:30',
+            'cards.*.first_name' => 'required|max:30',
+            'cards.*.last_name' => 'required|max:30',
+            'cards.*.phone' => 'required|numeric',
+            'cards.*.email' => 'required|email|max:255|unique:users',
+            'cards.*.template_id' => 'required|max:30',
+            'cards.*.message' => 'required|max:250',
+            'cards.*.amount' => 'required',
+            'cards.*.card_type' => 'required',
         ];
 
         if ($request->hasFile('image')) {
             $rules['image'] = 'image|mimes:jpeg,bmp,png,jpg|max:2000';
         }
-        if ($request->has('card_type') && $request->productType == 'single') {
+        if ($request->has('card_type') && $request->card_type == 'single') {
             $rules = [
-                'rec_first_name' => 'required|max:30',
-                'rec_last_name' => 'required|max:30',
-                'rec_phone' => 'required|max:100',
-                'rec_email' => 'required|max:255',
+                'cards.*.rec_first_name' => 'required|max:30',
+                'cards.*.rec_last_name' => 'required|max:30',
+                'cards.*.rec_phone' => 'required|max:100',
+                'cards.*.rec_email' => 'required|max:255',
             ];
 
         }
         if ($request->has('is_shipping')) {
             $rules = [
-                'address' => 'required|max:150',
-                'city' => 'required|max:50',
-                'zip' => 'required|max:50',
-                'state' => 'required|max:50',
+                'cards.*.address' => 'required|max:150',
+                'cards.*.city' => 'required|max:50',
+                'cards.*.zip' => 'required|max:50',
+                'cards.*.state' => 'required|max:50',
             ];
 
         }
@@ -77,20 +75,20 @@ class GiftController extends Controller
             if ($request->has('transaction_status') && $request->transaction_status == 'approved') {
 
                 foreach ($request->cards as $card) {
-            $gifts = new Gift();
-            $card['gift_id'] = $gifts->savegift($card);
-            $gift_recipient = new GiftRecipient();
-            $gift_recipient->save_receipient($card);
-           // $transctions['gift_ids'][] = $card['gift_id'];
-            $str[] = $card['gift_id'];
-        }
-        $gift_ids = implode(',', $str);
-       
-        foreach ($request->transactions as $transactiondata) {
-        $transction = new Transaction();
-         $transactiondata['gift_ids'] =  $gift_ids; 
-        $transction->save_transaction($transactiondata);
-        }
+                    $gifts = new Gift();
+                    $card['gift_id'] = $gifts->savegift($card);
+                    $gift_recipient = new GiftRecipient();
+                    $gift_recipient->save_receipient($card);
+                    // $transctions['gift_ids'][] = $card['gift_id'];
+                    $str[] = $card['gift_id'];
+                }
+                $gift_ids = implode(',', $str);
+
+                foreach ($request->transactions as $transactiondata) {
+                    $transction = new Transaction();
+                    $transactiondata['gift_ids'] = $gift_ids;
+                    $transction->save_transaction($transactiondata);
+                }
 
             } else {
                 return response()->json(['success' => false, 'msg' => 'Transation has been failed.']);
@@ -141,9 +139,11 @@ class GiftController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(Request $request)
     {
-        //
+        $newEncrypter = new \Illuminate\Encryption\Encrypter('GdwsSry/XLper1Vm4Oco11/VYpSjpbIMEOMC6Fw33NI=', Config::get('app.cipher'));
+        $encrypted = $newEncrypter->encrypt('test');
+        echo $decrypted = $newEncrypter->decrypt('U2FsdGVkX19D5l+wNnUvv03aiZJ3cdpFp6IXrbrcbCQ=');
     }
 
     /**

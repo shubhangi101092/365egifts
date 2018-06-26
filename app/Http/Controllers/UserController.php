@@ -3,9 +3,14 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-
+use JWTAuth;
+use Tymon\JWTAuth\Exceptions\JWTException;
+ 
 class UserController extends Controller
 {
+
+
+    
     /**
      * Display a listing of the resource.
      *
@@ -81,4 +86,43 @@ class UserController extends Controller
     {
         //
     }
+
+    public function register(RegisterAuthRequest $request)
+    {
+        $user = new User();
+        $user->first_name = $request->first_name;
+        $user->last_name = $request->last_name;
+        $user->email = $request->email;
+        $user->phone = $request->phone;
+        $user->otp = bcrypt($request->otp);
+        $user->save();
+ 
+        if ($this->loginAfterSignUp) {
+            return $this->login($request);
+        }
+ 
+        return response()->json([
+            'success' => true,
+            'data' => $user
+        ], 200);
+    }
+ 
+    public function login(Request $request)
+    {
+        $input = $request->only('email', 'password');
+        $jwt_token = null;
+ 
+        if (!$jwt_token = JWTAuth::attempt($input)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid Email or Password',
+            ], 401);
+        }
+ 
+        return response()->json([
+            'success' => true,
+            'token' => $jwt_token,
+        ]);
+    }
+ 
 }
