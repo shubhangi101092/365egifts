@@ -5,8 +5,8 @@ namespace App\Http\Controllers;
 use App\Gift;
 use App\GiftRecipient;
 use App\Transaction;
-use Config;
 use Illuminate\Http\Request;
+use Mail;
 use Validator;
 
 class GiftController extends Controller
@@ -28,6 +28,7 @@ class GiftController extends Controller
      */
     public function create(Request $request)
     {
+        echo $request->input('transactions.status');exit;
         //AES encrypt on data
         //paypal api integration
         //
@@ -72,7 +73,7 @@ class GiftController extends Controller
             /*
             insert record into gifts table
              */
-            if ($request->has('transaction_status') && $request->transaction_status == 'approved') {
+            if ($request->has('transactions.status') && $request->transactions('status') == 'approved') {
 
                 foreach ($request->cards as $card) {
                     $gifts = new Gift();
@@ -100,14 +101,25 @@ class GiftController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Send OTP on mobile number and email.
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function send_otp(Request $request)
     {
-        //
+        $otp = mt_rand(100000, 999999);
+        $body = '<html><h1>Hi,</h1><p>You OTP is</p>' . $otp . '</html>';
+        $email = $request->email;
+        $phone = $request->phone;
+        $mail = Mail::raw([], function ($message) use ($body, $email) {
+            $message->from('data-delivery@loginworks.com', '365egifts');
+            $message->to($email);
+            $message->subject('OTP Recieved');
+            $message->setBody($body, 'text/html');
+            $message->addPart("5% off its awesome\n\nGo get it now!", 'text/plain');
+        });
+        return response()->json(['success' => true, 'otp' => $otp]);
     }
 
     /**
@@ -132,8 +144,6 @@ class GiftController extends Controller
         //
     }
 
-
-
     /**
      * Update the specified resource in storage.
      *
@@ -143,11 +153,47 @@ class GiftController extends Controller
      */
     public function update(Request $request)
     {
-        $newEncrypter = new \Illuminate\Encryption\Encrypter('GdwsSry/XLper1Vm4Oco11/VYpSjpbIMEOMC6Fw33NI=', Config::get('app.cipher'));
-        $encrypted = $newEncrypter->encrypt('test');
-        echo $decrypted = $newEncrypter->decrypt('U2FsdGVkX19D5l+wNnUvv03aiZJ3cdpFp6IXrbrcbCQ=');
+
+        echo $decrypt_string;
+
+        // $newEncrypter = new \Illuminate\Encryption\Encrypter('GdwsSry/XLper1Vm4Oco11/VYpSjpbIMEOMC6Fw33NI=', Config::get('app.cipher'));
+        // $encrypted = $newEncrypter->encrypt('test');
+        // echo $decrypted = $newEncrypter->decrypt('U2FsdGVkX19D5l+wNnUvv03aiZJ3cdpFp6IXrbrcbCQ=');
+
+        //Crypt::setMode('tripledes');
+        //      $value_to_be_encrypted = 'test';
+        //    echo $decrypted_value =  Crypt::encrypt($value_to_be_encrypted);
+        //     // return $decrypted_value;
+        //     echo Crypt::decrypt($decrypted_value); exit;
     }
 
+    public function encrypt($str)
+    {
+
+        //$key = $this->hex2bin($key);
+        $iv = 'loginworks092017';
+        $key = '092017apponlease';
+        $str = "test";
+        $td = mcrypt_module_open('rijndael-128', '', 'cbc', $iv);
+
+        mcrypt_generic_init($td, $key, $iv);
+        $encrypted = mcrypt_generic($td, $str);
+
+        mcrypt_generic_deinit($td);
+        mcrypt_module_close($td);
+        return $this->hex2bin($encrypted);
+    }
+
+    public function hex2bin($hexdata)
+    {
+        $bindata = '';
+
+        for ($i = 0; $i < strlen($hexdata); $i += 2) {
+            $bindata .= chr(hexdec(substr($hexdata, $i, 2)));
+        }
+
+        return $bindata;
+    }
     /**
      * Remove the specified resource from storage.
      *

@@ -18,3 +18,6 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 });
 Route::post('create_gifts', 'GiftController@create');
 Route::post('update', 'GiftController@update');
+Route::post('send_otp', 'GiftController@send_otp');
+Route::post('register', 'UserController@register');
+Route::post('login', 'UserController@login');
